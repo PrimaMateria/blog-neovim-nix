@@ -6,11 +6,14 @@ let
   runtimeDeps = import ../runtimeDeps.nix { inherit pkgs; };
   neovimRuntimeDependencies = pkgs.symlinkJoin {
     name = "neovimRuntimeDependencies";
-    paths = runtimeDeps.deps1;
-  };
-  neovimRuntimeDependencies2 = pkgs.symlinkJoin {
-    name = "neovimRuntimeDependencies2";
-    paths = runtimeDeps.deps2;
+    paths = runtimeDeps;
+    # see: https://ertt.ca/blog/2022/01-12-nix-symlinkJoin-nodePackages/
+    postBuild = ''
+      for f in $out/lib/node_modules/.bin/*; do
+         path="$(readlink --canonicalize-missing "$f")"
+         ln -s "$path" "$out/bin/$(basename $f)"
+      done
+    '';
   };
   myNeovimUnwrapped = pkgs.wrapNeovim pkgs.neovim {
     configure = {
@@ -18,9 +21,10 @@ let
       packages.all.start = plugins;
     };
   };
-in pkgs.writeShellApplication {
+in
+pkgs.writeShellApplication {
   name = "nvim";
-  runtimeInputs = [ neovimRuntimeDependencies2 neovimRuntimeDependencies ];
+  runtimeInputs = [ neovimRuntimeDependencies ];
   text = ''
     OPENAI_API_KEY=${secrets.openai-api-key} ${myNeovimUnwrapped}/bin/nvim "$@"
   '';

@@ -1,8 +1,7 @@
 { pkgs }:
-{
-  deps1 = with pkgs; [
-    nodePackages.typescript
-    nodePackages.typescript-language-server
-  ];
-  deps2 = with pkgs; [ lazygit ];
-}
+with pkgs; [
+  lazygit
+  # packages with results in /lib/node_modules/.bin must come at the end
+  nodePackages.typescript
+  nodePackages.typescript-language-server
+]
